@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
  * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
@@ -12,14 +13,21 @@
  * @since     3.3.0
  * @license   https://opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace App;
 
+use Authentication\AuthenticationService;
+use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\Middleware\AuthenticationMiddleware;
 use Cake\Core\Configure;
 use Cake\Core\Exception\MissingPluginException;
 use Cake\Error\Middleware\ErrorHandlerMiddleware;
 use Cake\Http\BaseApplication;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Cake\Routing\Router;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Application setup class.
@@ -27,7 +35,7 @@ use Cake\Routing\Middleware\RoutingMiddleware;
  * This defines the bootstrapping logic and middleware layers you
  * want to use in your application.
  */
-class Application extends BaseApplication
+class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
     /**
      * {@inheritDoc}
@@ -50,6 +58,40 @@ class Application extends BaseApplication
         }
 
         // Load more plugins here
+        $this->addPlugin('Authentication');
+    }
+
+    /**
+     * Returns a service provider instance.
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request Request
+     * @param \Psr\Http\Message\ResponseInterface $response Response
+     * @return \Authentication\AuthenticationServiceInterface
+     */
+    public function getAuthenticationService(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $service = new AuthenticationService();
+        $service->setConfig([
+            'unauthenticatedRedirect' => Router::normalize(['controller' => 'Auth', 'action' => 'login']),
+            'queryParam' => 'redirect',
+        ]);
+
+        $fields = [
+            'username' => 'email',
+            'password' => 'password'
+        ];
+
+        // Load identifiers
+        $service->loadIdentifier('Authentication.Password', compact('fields'));
+
+        // Load the authenticators, you want session first
+        $service->loadAuthenticator('Authentication.Session');
+        $service->loadAuthenticator('Authentication.Form', [
+            'fields' => $fields,
+            'loginUrl' => Router::normalize(['controller' => 'Auth', 'action' => 'login'])
+        ]);
+
+        return $service;
     }
 
     /**
@@ -76,7 +118,12 @@ class Application extends BaseApplication
             // creating the middleware instance specify the cache config name by
             // using it's second constructor argument:
             // `new RoutingMiddleware($this, '_cake_routes_')`
-            ->add(new RoutingMiddleware($this));
+            ->add(new RoutingMiddleware($this))
+
+            // Add the middleware to the middleware queue.
+            // Authentication should be added *after* RoutingMiddleware.
+            // So that subdirectory information and routes are loaded.
+            ->add(new AuthenticationMiddleware($this));
 
         return $middlewareQueue;
     }

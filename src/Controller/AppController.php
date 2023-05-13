@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
  * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
@@ -12,6 +13,7 @@
  * @since     0.2.9
  * @license   https://opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace App\Controller;
 
 use Cake\Controller\Controller;
@@ -24,6 +26,7 @@ use Cake\Event\Event;
  * will inherit them.
  *
  * @link https://book.cakephp.org/3/en/controllers.html#the-app-controller
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class AppController extends Controller
 {
@@ -45,6 +48,7 @@ class AppController extends Controller
             'enableBeforeRedirect' => false,
         ]);
         $this->loadComponent('Flash');
+        $this->loadComponent('Authentication.Authentication');
 
         /*
          * Enable the following component for recommended CakePHP security settings.
