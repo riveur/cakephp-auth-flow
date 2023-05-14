@@ -1,10 +1,15 @@
 <?php
+
 namespace App\Model\Table;
 
+use Cake\Database\Expression\QueryExpression;
+use Cake\I18n\FrozenTime;
+use Cake\ORM\Exception\PersistenceFailedException;
 use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use Exception;
 
 /**
  * PasswordResets Model
@@ -76,5 +81,56 @@ class PasswordResetsTable extends Table
         $rules->add($rules->isUnique(['email']));
 
         return $rules;
+    }
+
+    /**
+     * Create a password reset token for passed email.
+     *
+     * @param string $email The email refers to account need the password reset
+     * @param string $token The token string
+     * @param int $expirationTime Time for token validity in minutes
+     * @return string The token.
+     */
+    public function create($email, $token, $expirationTime)
+    {
+        $data = [
+            'email' => $email,
+            'token' => $token,
+            'created' => FrozenTime::now(),
+            'expires_at' => FrozenTime::now()->addMinutes($expirationTime)
+        ];
+
+        $exists = $this->exists(['email' => $email]);
+
+        if ($exists) {
+            $passwordReset = $this->find()->where(['email' => $email])->first();
+            $passwordReset = $this->patchEntity($passwordReset, $data, [
+                'accessibleFields' => [
+                    'email' => false
+                ]
+            ]);
+        } else {
+            $passwordReset = $this->newEntity($data);
+        }
+
+        try {
+            $passwordReset = $this->saveOrFail($passwordReset);
+        } catch (PersistenceFailedException $ex) {
+            throw new Exception(sprintf("An error occured when saving `%s`", get_class($ex->getEntity())));
+        }
+
+        return $passwordReset->token;
+    }
+
+    /**
+     * Delete all expired tokens
+     *
+     * @return int Number of rows affected
+     */
+    public function deleteExpired()
+    {
+        return $this->deleteAll(function (QueryExpression $exp) {
+            return $exp->lt('expires_at', FrozenTime::now());
+        });
     }
 }

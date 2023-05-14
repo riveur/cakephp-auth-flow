@@ -2,7 +2,7 @@
 
 /**
  * @var \App\View\AppView $this
- * @var \App\Form\LoginForm $form
+ * @var \App\Form\ForgotPasswordForm $form
  */
 ?>
 
@@ -11,10 +11,10 @@
         <div class="large-4">
             <?= $this->Form->create($form) ?>
             <fieldset>
-                <legend><?= __('Login') ?></legend>
-                <?= $this->Form->control('email') ?>
-                <?= $this->Form->control('password') ?>
-                <?= $this->Html->link(__('Forgot password ?'), ['_name' => 'forgot-password']) ?>
+                <legend><?= __('Forgot password ?') ?></legend>
+                <p>Enter your email and submit. We are gonna send you the instructions to reset your password.</p>
+                <?= $this->Form->control('email', ['type' => 'text']) ?>
+                <?= $this->Html->link(__('Back to log in ?'), ['_name' => 'login']) ?>
             </fieldset>
             <?= $this->Form->button(__('Submit')) ?>
             <?= $this->Form->end() ?>

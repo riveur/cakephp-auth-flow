@@ -2,7 +2,8 @@
 
 /**
  * @var \App\View\AppView $this
- * @var \App\Form\LoginForm $form
+ * @var \App\Form\PasswordResetForm $form
+ * @var \App\Model\Entity\PasswordReset $passwordReset
  */
 ?>
 
@@ -11,10 +12,10 @@
         <div class="large-4">
             <?= $this->Form->create($form) ?>
             <fieldset>
-                <legend><?= __('Login') ?></legend>
-                <?= $this->Form->control('email') ?>
+                <legend><?= __('Password reset') ?></legend>
+                <p>Hey <?= $passwordReset->email ?>, enter your new password to change it !</p>
                 <?= $this->Form->control('password') ?>
-                <?= $this->Html->link(__('Forgot password ?'), ['_name' => 'forgot-password']) ?>
+                <?= $this->Form->control('password_confirm', ['type' => 'password']) ?>
             </fieldset>
             <?= $this->Form->button(__('Submit')) ?>
             <?= $this->Form->end() ?>

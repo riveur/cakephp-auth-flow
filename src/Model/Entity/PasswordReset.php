@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Model\Entity;
 
 use Cake\ORM\Entity;
@@ -23,6 +24,7 @@ class PasswordReset extends Entity
      * @var array
      */
     protected $_accessible = [
+        'email' => true,
         'token' => true,
         'created' => true,
         'expires_at' => true,
