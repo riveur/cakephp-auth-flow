@@ -71,6 +71,7 @@ Router::scope('/', function (RouteBuilder $routes) {
     $routes->connect('/logout', ['controller' => 'Auth', 'action' => 'logout'], ['_name' => 'logout']);
     $routes->connect('/forgot-password', ['controller' => 'Auth', 'action' => 'forgot-password'], ['_name' => 'forgot-password']);
     $routes->connect('/password-reset', ['controller' => 'Auth', 'action' => 'password-reset'], ['_name' => 'password-reset']);
+    $routes->connect('/profile', ['controller' => 'Auth', 'action' => 'profile'], ['_name' => 'profile']);
 
     /*
      * ...and connect the rest of 'Pages' controller's URLs.

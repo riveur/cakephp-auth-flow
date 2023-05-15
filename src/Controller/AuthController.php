@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Controller\AppController;
 use App\Form\ForgotPasswordForm;
 use App\Form\LoginForm;
+use App\Form\PasswordChangeForm;
 use App\Form\PasswordResetForm;
 use App\Services\Authentication;
 use Authentication\PasswordHasher\PasswordHasherTrait;
@@ -60,6 +61,7 @@ class AuthController extends AppController
             return $this->redirect($target);
         }
         if ($this->request->is('post') && !$result->isValid()) {
+            $this->request = $this->request->withoutData('password');
             $this->Flash->error('Invalid credentials');
         }
 
@@ -120,7 +122,7 @@ class AuthController extends AppController
 
             if (
                 $isValid &&
-                $this->_processPasswordReset($this->request->getData('password'), $passwordReset) !== false
+                $this->_processPasswordReset($this->request->getData('password'), $passwordReset->email) !== false
             ) {
                 $this->Flash->success('Your password has been reset successfully !');
             } else {
@@ -133,16 +135,65 @@ class AuthController extends AppController
         $this->set(compact('form', 'passwordReset'));
     }
 
+    public function profile()
+    {
+        $passwordChangeForm = new PasswordChangeForm();
+
+        if ($this->request->is('post')) {
+            $isValid = $passwordChangeForm->validate($this->request->getData());
+
+            if (!$isValid) {
+                $this->set(compact('passwordChangeForm'));
+                return;
+            }
+
+            $checkPassword = $this->Users
+                ->find()
+                ->select(['password'])
+                ->where([
+                    'email' => $this->Authentication->getIdentityData('email')
+                ])
+                ->first();
+
+            $checkPassword = $this->getPasswordHasher()
+                ->check($this->request->getData('current_password'), $checkPassword->password);
+
+            if ($checkPassword === false) {
+                $passwordChangeForm->setErrors([
+                    'current_password' => [
+                        'invalid_password' => 'The password is incorrect'
+                    ]
+                ]);
+                $this->set(compact('passwordChangeForm'));
+                return;
+            }
+
+            if (
+                $this->_processPasswordReset(
+                    $this->request->getData('new_password'),
+                    $this->Authentication->getIdentityData('email')
+                ) !== false
+            ) {
+                $this->Flash->success('Your password has been changed successfully !');
+                return $this->logout();
+            } else {
+                $this->Flash->error('An error occurend try again later.');
+            }
+        }
+
+        $this->set(compact('passwordChangeForm'));
+    }
+
     /**
      * Process password reset.
      *
      * @param string $newPassword
-     * @param \App\Model\Entity\PasswordReset $passwordReset
+     * @param string $email
      * @return void
      */
-    protected function _processPasswordReset($newPassword, $passwordReset)
+    protected function _processPasswordReset($newPassword, $email)
     {
-        $user = $this->Users->find()->where(['email' => $passwordReset->email])->first();
+        $user = $this->Users->find()->where(['email' => $email])->first();
         $user = $this->Users->patchEntity($user, [
             'password' => $newPassword
         ]);
