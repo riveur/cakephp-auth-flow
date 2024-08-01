@@ -34,11 +34,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
-            junit 'reports/**/*.xml'
-        }
-    }
 }
